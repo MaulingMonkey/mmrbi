@@ -98,11 +98,11 @@ pub fn req_var_path (name: impl AsRef<OsStr> + Into<OsString>) -> PathBuf   { va
 
 
 
-pub fn opt_var_str(name: impl AsRef<OsStr> + Into<OsString>) -> Option<String> {
+pub fn opt_var_str(name: impl AsRef<OsStr> + Into<OsString>) -> Result<Option<String>> {
     match std::env::var(name.as_ref()) {
-        Ok(v) => Some(v),
-        Err(std::env::VarError::NotPresent)     => None,
-        Err(std::env::VarError::NotUnicode(_))  => fatal!("{}", Error::InvalidUnicode(name.into())),
+        Ok(v) => Ok(Some(v)),
+        Err(std::env::VarError::NotPresent)     => Ok(None),
+        Err(std::env::VarError::NotUnicode(_))  => Err(Error::InvalidUnicode(name.into())),
     }
 }
 
