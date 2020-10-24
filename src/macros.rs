@@ -38,14 +38,14 @@
 #[macro_export] macro_rules! info { ($($tt:tt)*) => { $crate::_logln!($crate::log::Severity::Info,     $($tt)*) }; }
 
 /// Display a status/progress lines in the same style as cargo or rustc:
-/// <code style="display: block; padding: 0.25em; margin: 0.5em 0;"><span style="color: green; font-weight: bold">&nbsp;Documenting</span> mmrbi v0.0.0-git (C:\local\mmrbi)
+/// <code style="display: block; padding: 0.25em; margin: 0.5em 0;"><span style="color: green; font-weight: bold">&nbsp;Documenting</span> mmrbi v0.0.0 (C:\local\mmrbi)
 /// <span style="color: green; font-weight: bold">&nbsp;&nbsp;&nbsp;&nbsp;Finished</span> dev \[debuginfo\] target(s) in 0.91s</code>
 ///
 /// # Example
 ///
 /// ```rust
 /// # use mmrbi::*;
-/// status!("Documenting", "{} {} ({})", "mmrbi", "v0.0.0-git", r"C:\local\mmrbi");
+/// status!("Documenting", "{} {} ({})", "mmrbi", "v0.0.0", r"C:\local\mmrbi");
 /// status!("Finished", "{} [{}] target(s) in {}s", "dev", "debuginfo", "0.91");
 /// ```
 #[macro_export] macro_rules! status {
