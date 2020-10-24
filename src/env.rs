@@ -56,6 +56,10 @@ impl Display for Error {
 
 
 
+pub fn has_var(name: impl AsRef<OsStr> + Into<OsString>) -> bool {
+    std::env::var_os(name).is_some()
+}
+
 pub fn var_str(name: impl AsRef<OsStr> + Into<OsString>) -> Result<String> {
     match std::env::var(name.as_ref()) {
         Ok(v) => Ok(v),
