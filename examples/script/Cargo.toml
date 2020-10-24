@@ -1,0 +1,13 @@
+# https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[package]
+name            = "examples-script"
+version         = "0.0.0"
+publish         = false
+edition         = "2018"
+
+[lib]
+path            = "lib.rs"
+
+[build-dependencies]
+mmrbi           = { path = "../.." }

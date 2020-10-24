@@ -8,4 +8,4 @@ matrix:
   allow_failures:
     - rust: beta
     - rust: nightly
-script: cargo build --all-targets --verbose && cargo test --verbose
+script: cargo build --all-targets --workspace --verbose && cargo test --verbose --workspace

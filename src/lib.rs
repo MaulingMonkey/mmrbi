@@ -2,6 +2,8 @@
 
 mod macros;
 
+#[path="cargo/_cargo.rs"] pub mod cargo;
+
 mod command_ext;    pub use command_ext::CommandExt;
 mod command;        pub use command::Command;
 pub mod env;
