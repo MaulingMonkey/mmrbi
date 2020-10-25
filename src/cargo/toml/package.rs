@@ -37,7 +37,9 @@ pub struct Package<Metadata = toml::value::Table> {
     #[serde(flatten)] rest:               toml::value::Table
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+/// [`package.publish`](https://doc.rust-lang.org/cargo/reference/manifest.html#the-publish-field)
+/// — prevent publishing, or limit publishing to a list of known registries
+#[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
 #[non_exhaustive]
 #[serde(untagged)]
 pub enum Publish {
