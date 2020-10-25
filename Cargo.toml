@@ -2,6 +2,7 @@
 
 [workspace]
 members = [".", "examples/script"]
+exclude = ["examples/asdf"]
 
 [package]
 name            = "mmrbi"
@@ -23,3 +24,4 @@ travis-ci       = { repository = "MaulingMonkey/mmrbi", branch = "master" }
 lazy_static     = "1.4"
 serde           = { version = "1", features = ["derive"] }
 toml            = "0.5"
+nonmax          = "0.5"
