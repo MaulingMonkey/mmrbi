@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 /// [`[workspace]`](https://doc.rust-lang.org/cargo/reference/workspaces.html)
 /// — The workspace definition.
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, Default)]
 #[non_exhaustive]
 #[serde(rename_all="kebab-case")]
 pub struct Workspace<Metadata = toml::value::Table> {
