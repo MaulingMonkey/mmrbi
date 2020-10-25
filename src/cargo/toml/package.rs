@@ -27,7 +27,7 @@ pub struct Package<Metadata = toml::value::Table> {
     #[serde(default)] pub links:          Option<String>,
     #[serde(default)] pub exclude:        Vec<String>,
     #[serde(default)] pub include:        Vec<String>,
-    #[serde(default)] pub publish:        Option<String>,
+    #[serde(default)] pub publish:        Publish,
     #[serde(default)] pub metadata:       Metadata,
     #[serde(default)] pub default_run:    Option<String>,
     #[serde(default)] pub autobins:       Option<bool>,
@@ -35,4 +35,16 @@ pub struct Package<Metadata = toml::value::Table> {
     #[serde(default)] pub autotests:      Option<bool>,
     #[serde(default)] pub autobenches:    Option<bool>,
     #[serde(flatten)] rest:               toml::value::Table
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
+#[non_exhaustive]
+#[serde(untagged)]
+pub enum Publish {
+    Enabled(bool),
+    Registries(Vec<String>),
+}
+
+impl Default for Publish {
+    fn default() -> Self { Publish::Enabled(true) }
 }
