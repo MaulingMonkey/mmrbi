@@ -3,10 +3,12 @@
 mod macros;
 
 #[path="cargo/_cargo.rs"] pub mod cargo;
+#[doc(hidden)] pub mod log; // macro implementation details
 
 mod command_ext;    pub use command_ext::CommandExt;
 mod command;        pub use command::Command;
 pub mod env;
-#[doc(hidden)] pub mod log; // macro implementation details
+mod path_ext;       pub use path_ext::PathExt;
+pub mod path;
 pub mod rustup;     pub use rustup::Rustup;
-mod result_ext; pub use result_ext::ResultExt;
+mod result_ext;     pub use result_ext::ResultExt;
