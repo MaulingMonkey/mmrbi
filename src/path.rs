@@ -23,12 +23,14 @@ use std::path::{Component, Path, PathBuf, Prefix};
 /// ```
 pub fn cleanup(path: impl AsRef<Path>) -> PathBuf {
     let mut p = PathBuf::new();
-    for c in path.as_ref().components() {
+    let mut components = path.as_ref().components();
+    while let Some(c) = components.next() {
         match c {
             Component::Prefix(pre) => match pre.kind() {
                 Prefix::VerbatimDisk(disk) => {
                     p.clear();
-                    p.push(format!("{}:", char::from(disk)));
+                    p.push(format!("{}:\\", char::from(disk)));
+                    let _root = components.next();
                 },
                 _other => {
                     p.clear();
