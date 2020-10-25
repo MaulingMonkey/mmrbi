@@ -1,0 +1,11 @@
+# https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[package]
+workspace       = "../.."
+name            = "examples-explicit-package-path"
+version         = "0.0.0"
+publish         = false
+edition         = "2018"
+
+[lib]
+path            = "lib.rs"

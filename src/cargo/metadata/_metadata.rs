@@ -11,7 +11,7 @@ use super::toml;
 
 use nonmax::NonMaxUsize;
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, BTreeMap};
 use std::fmt::Debug;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -64,7 +64,7 @@ impl Metadata {
         match (workspace, cargo.with_package()) {
             (None,      None        ) => bail!("expected [package] or [workspace] table in manifest file", DiagKind::Malformed),
             (Some(ws),  None        ) => Self::from_file_workspace(path, ws),
-            (None,      Some(_pkg)  ) => unimplemented!(),
+            (None,      Some(pkg)   ) => Self::from_file_package(path, pkg),
             (Some(ws),  Some(pkg)   ) => Self::from_file_workspace_package(path, ws, pkg),
         }
     }
@@ -101,6 +101,95 @@ impl Metadata {
         for path in paths.into_iter() { metadata.load_pkg(path) }
 
         metadata
+    }
+
+    fn from_file_package(pkg_path: impl AsRef<Path> + Into<PathBuf>, pkg: toml::Cargo<toml::Package, ()>) -> Self {
+        if let Some(workspace) = pkg.package.workspace.as_ref() {
+            let directory = pkg_path.as_ref().join(workspace).cleanup();
+            let ws_path = directory.join("Cargo.toml");
+
+            macro_rules! bail { ($msg:expr, $kind:expr) => { return Self {
+                workspace: Workspace {
+                    toml: toml::Workspace {
+                        members: pkg_path.as_ref().strip_prefix(&directory).ok().map(|p| p.join("..").cleanup()).into_iter().collect(),
+                        ..Default::default()
+                    },
+                    directory,
+                    ..Default::default()
+                },
+                packages: Packages {
+                    active: Some(NonMaxUsize::from(0u8)),
+                    by_name: { let mut bm = BTreeMap::new(); bm.insert(pkg.package.name.clone(), 0); bm },
+                    by_path: { let mut bm = BTreeMap::new(); bm.insert(PathBuf::from(pkg_path.as_ref()), 0); bm },
+                    list: vec![Package {
+                        path: pkg_path.into(),
+                        toml: pkg,
+                    }],
+                },
+                diagnostics: vec![Diagnostic { path: Some(ws_path), message: $msg.into(), kind: $kind }],
+                .. Default::default()
+            }}}
+
+            let bytes               = match std::fs::read(&ws_path)         { Ok(b) => b, Err(err) => bail!("unable to read manifest file", DiagKind::Io(err)) };
+            let cargo : toml::Cargo = match ::toml::from_slice(&bytes[..])  { Ok(c) => c, Err(err) => bail!("unable to parse manifest file", DiagKind::Toml(err)) };
+
+            let (cargo, ws) = cargo.take_workspace();
+            let ws = match ws { Some(ws) => ws, None => bail!("expected a [workspace]", DiagKind::Malformed) };
+
+            let mut m = Self::from_file_workspace(&ws_path, ws);
+            m.set_active(pkg_path);
+            if cargo.package.is_some() {
+                m.expect_contains(ws_path);
+            }
+            return m;
+
+        } else { // no `package.workspace`, search for `[workspace]`-bearing Cargo.toml
+            let mut search = PathBuf::from(pkg_path.as_ref());
+            loop {
+                search.pop();
+                if !search.pop() {
+                    // No `[workspace]`-bearing Cargo.toml s found, this package has no explicit workspace
+                    return Self::from_file_package_standalone(pkg_path, pkg);
+                }
+                search.push("Cargo.toml");
+                if search.exists() {
+                    macro_rules! bail { ($msg:expr, $kind:expr) => {{
+                        let mut m = Self::from_file_package_standalone(pkg_path, pkg);
+                        m.diagnostics.push(Diagnostic{ path: Some(search), message: $msg.into(), kind: $kind });
+                        return m;
+                    }}}
+
+                    let bytes               = match std::fs::read(&search)          { Ok(b) => b, Err(err) => bail!("unable to read manifest file", DiagKind::Io(err)) };
+                    let cargo : toml::Cargo = match ::toml::from_slice(&bytes[..])  { Ok(c) => c, Err(err) => bail!("unable to parse manifest file", DiagKind::Toml(err)) };
+                    let (cargo, ws) = cargo.take_workspace();
+                    if let Some(ws) = ws {
+                        let mut m = Self::from_file_workspace(&search, ws);
+                        m.set_active(pkg_path);
+                        if cargo.package.is_some() {
+                            m.expect_contains(search);
+                        }
+                        return m;
+                    }
+                    // else continue - not a workspace
+                }
+            }
+        }
+    }
+
+    fn from_file_package_standalone(pkg_path: impl AsRef<Path> + Into<PathBuf>, pkg: toml::Cargo<toml::Package, ()>) -> Self {
+        Self {
+            workspace:  Workspace { directory: pop1(pkg_path.as_ref()), toml: toml::Workspace { members: vec![PathBuf::from(".")], ..Default::default() }, ..Default::default() },
+            packages:   Packages {
+                active: Some(NonMaxUsize::from(0u8)),
+                by_name: { let mut bm = BTreeMap::new(); bm.insert(pkg.package.name.clone(), 0); bm },
+                by_path: { let mut bm = BTreeMap::new(); bm.insert(PathBuf::from(pkg_path.as_ref()), 0); bm },
+                list: vec![Package {
+                    path: pkg_path.into(),
+                    toml: pkg,
+                }],
+            },
+            .. Default::default()
+        }
     }
 
     fn from_file_workspace_package(path: impl AsRef<Path> + Into<PathBuf>, ws: toml::Workspace, _pkg: toml::Cargo<toml::Package, ()>) -> Self {
@@ -162,6 +251,17 @@ impl Metadata {
             kind:       DiagKind::Malformed,
         })}
     }
+
+    fn expect_contains(&mut self, path: impl AsRef<Path>) {
+        let path = path.as_ref();
+        debug_assert!(path.is_absolute());
+        let found = self.packages.by_path.get(path).and_then(|i| NonMaxUsize::new(*i));
+        if found.is_none() { self.diagnostics.push(Diagnostic{
+            path:       Some(PathBuf::from(path)),
+            message:    format!("is expected to be part of the workspace, but it is not"),
+            kind:       DiagKind::Malformed,
+        })}
+    }
 }
 
 
@@ -192,5 +292,17 @@ impl Metadata {
         assert_eq!(script.path,                 cwd.join("examples").join("script").join("Cargo.toml"));
         assert_eq!(script.package.name,         "examples-script");
         assert_eq!(script.package.publish,      toml::Publish::Enabled(false));
+    }
+
+    #[test] fn deserialize_misc_dir() {
+        let _meta = Metadata::from_dir("src/cargo").unwrap();
+    }
+
+    #[test] fn deserialize_leaf_package() {
+        let _meta = Metadata::from_dir("examples/script").unwrap();
+    }
+
+    #[test] fn deserialize_leaf_package_explicit_ws() {
+        let _meta = Metadata::from_dir("examples/explicit-package-path").unwrap();
     }
 }
