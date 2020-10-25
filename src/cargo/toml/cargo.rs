@@ -103,6 +103,7 @@ impl<Package, Workspace> Cargo<Option<Package>, Workspace> {
 
 #[cfg(test)] mod tests {
     use super::*;
+    use std::path::Path;
 
     #[test] fn deserialize() {
         let path = std::path::Path::new("Cargo.toml");
@@ -111,7 +112,7 @@ impl<Package, Workspace> Cargo<Option<Package>, Workspace> {
 
         let package = cargo.package.unwrap();
         let workspace = cargo.workspace.unwrap();
-        assert!(workspace.members.iter().any(|member| member == "."));
+        assert!(workspace.members.iter().any(|member| member == Path::new(".")));
         assert_eq!(package.name, "mmrbi");
     }
 }
