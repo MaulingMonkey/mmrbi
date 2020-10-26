@@ -88,9 +88,10 @@ impl<
         }
     }
 
-    fn from_file_workspace(path: impl AsRef<Path> + Into<PathBuf>, toml: toml::Workspace<WM>) -> Self {
+    pub fn from_file_workspace(path: impl AsRef<Path> + Into<PathBuf>, toml: toml::Workspace<WM>) -> Self {
+        let path = path.as_ref().canonicalize().unwrap_or_else(|_| path.into()); // XXX?
         let mut metadata = Self {
-            workspace:  Workspace { directory: pop1(path.as_ref()), toml },
+            workspace:  Workspace { directory: pop1(&path), toml },
             .. Default::default()
         };
 
@@ -101,7 +102,7 @@ impl<
             let n = paths.len();
             enum_manifest_pattern(true, &mut paths, &mut patpath, member .components(), member, &mut metadata.diagnostics);
             if n == paths.len() { metadata.diagnostics.push(Diagnostic {
-                path:       Some(PathBuf::from(path.as_ref())),
+                path:       Some(path.clone()),
                 message:    format!("member pattern {:?} added no packages", member),
                 kind:       DiagKind::Malformed,
             })}
@@ -111,7 +112,7 @@ impl<
             let n = paths.len();
             enum_manifest_pattern(false, &mut paths, &mut patpath, exclude.components(), exclude, &mut metadata.diagnostics);
             if n == paths.len() { metadata.diagnostics.push(Diagnostic {
-                path:       Some(PathBuf::from(path.as_ref())),
+                path:       Some(path.clone()),
                 message:    format!("exclude pattern {:?} removed no packages", exclude),
                 kind:       DiagKind::Warning,
             })}
