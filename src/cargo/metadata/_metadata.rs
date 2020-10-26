@@ -9,6 +9,8 @@ mod workspace;      pub use workspace::Workspace;
 use crate::PathExt;
 use super::toml;
 
+use serde::de::DeserializeOwned;
+
 use nonmax::NonMaxUsize;
 
 use std::collections::{BTreeSet, BTreeMap};
@@ -21,13 +23,19 @@ use std::path::{Path, PathBuf};
 /// Parsed `[workspace]` and `[package]`s
 #[derive(Debug, Default)]
 #[non_exhaustive]
-pub struct Metadata {
-    pub packages:       Packages,
-    pub workspace:      Workspace,
+pub struct Metadata<
+    PackageMetadata     = ::toml::value::Table,
+    WorkspaceMetadata   = ::toml::value::Table,
+> {
+    pub packages:       Packages<PackageMetadata>,
+    pub workspace:      Workspace<WorkspaceMetadata>,
     pub diagnostics:    Vec<Diagnostic>,
 }
 
-impl Metadata {
+impl<
+    PM : Default + DeserializeOwned,
+    WM : Default + DeserializeOwned,
+> Metadata<PM, WM> {
     pub fn from_current_dir() -> io::Result<Self> {
         Self::from_dir(std::env::current_dir().map_err(|err| io::Error::new(err.kind(), format!("unable to resolve cwd: {}", err)))?)
     }
@@ -46,6 +54,17 @@ impl Metadata {
     // TODO: util methods that convert "Diagnostics" to result errors above?
     // Errors beyond this point are packaged into Metadata.diagnostics
 
+    // This mostly exists to get type inference right
+    fn parse(bytes: &[u8]) -> Result<
+        toml::Cargo<
+            Option<toml::Package<PM>>,
+            Option<toml::Workspace<WM>>,
+        >,
+        ::toml::de::Error
+    > {
+        ::toml::from_slice(bytes)
+    }
+
     fn from_file(path: impl AsRef<Path> + Into<PathBuf>) -> Self {
         debug_assert!(path.as_ref().is_absolute(), "path not absolute: {}", path.as_ref().display()); // XXX: Before exposing, how do we want to handle relative paths?
 
@@ -57,8 +76,8 @@ impl Metadata {
             }};
         }
 
-        let bytes               = match std::fs::read(path.as_ref())    { Ok(b) => b, Err(err) => bail!("unable to read manifest file", DiagKind::Io(err)) };
-        let cargo : toml::Cargo = match ::toml::from_slice(&bytes[..])  { Ok(c) => c, Err(err) => bail!("unable to parse manifest file", DiagKind::Toml(err)) };
+        let bytes = match std::fs::read(path.as_ref())  { Ok(b) => b, Err(err) => bail!("unable to read manifest file",  DiagKind::Io(err)) };
+        let cargo = match Self::parse(&bytes)           { Ok(c) => c, Err(err) => bail!("unable to parse manifest file", DiagKind::Toml(err)) };
 
         let (cargo, workspace) = cargo.take_workspace();
         match (workspace, cargo.with_package()) {
@@ -69,8 +88,8 @@ impl Metadata {
         }
     }
 
-    fn from_file_workspace(path: impl AsRef<Path> + Into<PathBuf>, toml: toml::Workspace) -> Self {
-        let mut metadata = Metadata {
+    fn from_file_workspace(path: impl AsRef<Path> + Into<PathBuf>, toml: toml::Workspace<WM>) -> Self {
+        let mut metadata = Self {
             workspace:  Workspace { directory: pop1(path.as_ref()), toml },
             .. Default::default()
         };
@@ -103,7 +122,7 @@ impl Metadata {
         metadata
     }
 
-    fn from_file_package(pkg_path: impl AsRef<Path> + Into<PathBuf>, pkg: toml::Cargo<toml::Package, ()>) -> Self {
+    fn from_file_package(pkg_path: impl AsRef<Path> + Into<PathBuf>, pkg: toml::Cargo<toml::Package<PM>, ()>) -> Self {
         if let Some(workspace) = pkg.package.workspace.as_ref() {
             let directory = pkg_path.as_ref().join(workspace).cleanup();
             let ws_path = directory.join("Cargo.toml");
@@ -130,8 +149,8 @@ impl Metadata {
                 .. Default::default()
             }}}
 
-            let bytes               = match std::fs::read(&ws_path)         { Ok(b) => b, Err(err) => bail!("unable to read manifest file", DiagKind::Io(err)) };
-            let cargo : toml::Cargo = match ::toml::from_slice(&bytes[..])  { Ok(c) => c, Err(err) => bail!("unable to parse manifest file", DiagKind::Toml(err)) };
+            let bytes = match std::fs::read(&ws_path)   { Ok(b) => b, Err(err) => bail!("unable to read manifest file", DiagKind::Io(err)) };
+            let cargo = match Self::parse(&bytes)       { Ok(c) => c, Err(err) => bail!("unable to parse manifest file", DiagKind::Toml(err)) };
 
             let (cargo, ws) = cargo.take_workspace();
             let ws = match ws { Some(ws) => ws, None => bail!("expected a [workspace]", DiagKind::Malformed) };
@@ -159,8 +178,8 @@ impl Metadata {
                         return m;
                     }}}
 
-                    let bytes               = match std::fs::read(&search)          { Ok(b) => b, Err(err) => bail!("unable to read manifest file", DiagKind::Io(err)) };
-                    let cargo : toml::Cargo = match ::toml::from_slice(&bytes[..])  { Ok(c) => c, Err(err) => bail!("unable to parse manifest file", DiagKind::Toml(err)) };
+                    let bytes = match std::fs::read(&search)    { Ok(b) => b, Err(err) => bail!("unable to read manifest file", DiagKind::Io(err)) };
+                    let cargo = match Self::parse(&bytes)       { Ok(c) => c, Err(err) => bail!("unable to parse manifest file", DiagKind::Toml(err)) };
                     let (cargo, ws) = cargo.take_workspace();
                     if let Some(ws) = ws {
                         let mut m = Self::from_file_workspace(&search, ws);
@@ -176,7 +195,7 @@ impl Metadata {
         }
     }
 
-    fn from_file_package_standalone(pkg_path: impl AsRef<Path> + Into<PathBuf>, pkg: toml::Cargo<toml::Package, ()>) -> Self {
+    fn from_file_package_standalone(pkg_path: impl AsRef<Path> + Into<PathBuf>, pkg: toml::Cargo<toml::Package<PM>, ()>) -> Self {
         Self {
             workspace:  Workspace { directory: pop1(pkg_path.as_ref()), toml: toml::Workspace { members: vec![PathBuf::from(".")], ..Default::default() }, ..Default::default() },
             packages:   Packages {
@@ -192,7 +211,7 @@ impl Metadata {
         }
     }
 
-    fn from_file_workspace_package(path: impl AsRef<Path> + Into<PathBuf>, ws: toml::Workspace, _pkg: toml::Cargo<toml::Package, ()>) -> Self {
+    fn from_file_workspace_package(path: impl AsRef<Path> + Into<PathBuf>, ws: toml::Workspace<WM>, _pkg: toml::Cargo<toml::Package<PM>, ()>) -> Self {
         let mut metadata = Self::from_file_workspace(path.as_ref(), ws);
         metadata.set_active(path);
         metadata
@@ -203,10 +222,10 @@ impl Metadata {
         debug_assert!(!self.packages.by_path.contains_key(&path));
         macro_rules! bail { ($msg:expr, $kind:expr) => { return self.diagnostics.push(Diagnostic{ path: Some(path), message: $msg.into(), kind: $kind })}; }
 
-        let bytes               = match std::fs::read(&path)            { Ok(b) => b, Err(err) => bail!("unable to read manifest file", DiagKind::Io(err)) };
-        let cargo : toml::Cargo = match ::toml::from_slice(&bytes[..])  { Ok(c) => c, Err(err) => bail!("unable to parse manifest file", DiagKind::Toml(err)) };
+        let bytes = match std::fs::read(&path)  { Ok(b) => b, Err(err) => bail!("unable to read manifest file", DiagKind::Io(err)) };
+        let cargo = match Self::parse(&bytes)   { Ok(c) => c, Err(err) => bail!("unable to parse manifest file", DiagKind::Toml(err)) };
         let (cargo, _ws) = cargo.take_workspace(); // TODO: Validate this matches the current workspace
-        let pkg                 = match cargo.with_package()            { Some(p) => p, None => bail!("missing [package] in manifest", DiagKind::Malformed) };
+        let pkg   = match cargo.with_package()  { Some(p) => p, None => bail!("missing [package] in manifest", DiagKind::Malformed) };
 
         let i = self.packages.list.len();
 
@@ -272,7 +291,7 @@ impl Metadata {
 
     #[test] fn deserialize() {
         let cwd = std::env::current_dir().unwrap();
-        let meta = Metadata::from_current_dir().unwrap();
+        let meta : Metadata = Metadata::from_current_dir().unwrap();
 
         assert_eq!(meta.workspace.directory, cwd);
         assert!(meta.workspace.members.iter().any(|m| m == Path::new(".")), "meta.workspace.members: {:#?}",    meta.workspace.members);
@@ -295,14 +314,14 @@ impl Metadata {
     }
 
     #[test] fn deserialize_misc_dir() {
-        let _meta = Metadata::from_dir("src/cargo").unwrap();
+        let _meta : Metadata = Metadata::from_dir("src/cargo").unwrap();
     }
 
     #[test] fn deserialize_leaf_package() {
-        let _meta = Metadata::from_dir("examples/script").unwrap();
+        let _meta : Metadata = Metadata::from_dir("examples/script").unwrap();
     }
 
     #[test] fn deserialize_leaf_package_explicit_ws() {
-        let _meta = Metadata::from_dir("examples/explicit-package-path").unwrap();
+        let _meta : Metadata = Metadata::from_dir("examples/explicit-package-path").unwrap();
     }
 }

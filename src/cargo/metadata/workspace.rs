@@ -8,12 +8,12 @@ use std::path::PathBuf;
 /// A workspace directory, and possibly a corresponding `[workspace]`
 #[derive(Debug, Default)]
 #[non_exhaustive]
-pub struct Workspace {
+pub struct Workspace<WorkspaceMetadata = ::toml::value::Table> {
     pub directory:  PathBuf,
-    pub toml:       toml::Workspace,
+    pub toml:       toml::Workspace<WorkspaceMetadata>,
 }
 
-impl Deref for Workspace {
-    type Target = toml::Workspace;
-    fn deref(&self) -> &toml::Workspace { &self.toml }
+impl<WM> Deref for Workspace<WM> {
+    type Target = toml::Workspace<WM>;
+    fn deref(&self) -> &toml::Workspace<WM> { &self.toml }
 }
