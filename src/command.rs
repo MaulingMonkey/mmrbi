@@ -138,6 +138,9 @@ impl Command {
         c.args(self.args.iter());
         if self.env_clear { c.env_clear(); }
         c.envs(self.env.iter());
+        if let Some(stdin ) = self.stdin .as_ref() { c.stdin (stdin ()); }
+        if let Some(stdout) = self.stdout.as_ref() { c.stdout(stdout()); }
+        if let Some(stderr) = self.stderr.as_ref() { c.stderr(stderr()); }
         c
     }
 
