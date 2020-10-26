@@ -34,6 +34,7 @@ use std::ffi::*;
 use std::fmt::{self, Display, Formatter};
 use std::hash::{Hash, Hasher};
 use std::io;
+use std::process::Stdio;
 use std::sync::Arc;
 
 
@@ -52,7 +53,7 @@ impl Rustup {
     /// Returns `Err(...)` if `{rustup} --version` fails.
     pub fn new(rustup: impl AsRef<OsStr> + Into<OsString>) -> io::Result<Self> {
         let rustup = rustup.into();
-        Command::new(&rustup).arg("--version").status0()?;
+        Command::new(&rustup).arg("--version").stdout(|| Stdio::null()).status0()?;
         Ok(Self { rustup: Arc::new(rustup.into()) })
     }
 
@@ -64,7 +65,7 @@ impl Rustup {
 
     /// Returns `true` if `rustup --version` still succeeds
     pub fn is_available(&self) -> bool {
-        Command::new(self.rustup.as_os_str()).arg("--version").status().map_or(false, |c| c.code() == Some(0))
+        Command::new(self.rustup.as_os_str()).arg("--version").stdout(|| Stdio::null()).status().map_or(false, |c| c.code() == Some(0))
     }
 
     /// Toolchains rustup is aware of
