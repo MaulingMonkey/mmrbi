@@ -20,6 +20,9 @@ use std::path::{Component, Path, PathBuf, Prefix};
 /// assert_eq!(cleanup("../../a/b/../.."),          Path::new("../.."));
 /// assert_eq!(cleanup("../../a/b/../../.."),       Path::new("../../.."));
 /// assert_eq!(cleanup("../../a/b/../../../.."),    Path::new("../../../.."));
+///
+/// assert_eq!(cleanup(r"C:\foo\bar"),              Path::new(r"C:\foo\bar"));
+/// assert_eq!(cleanup(r"\\?\C:\foo\bar"),          Path::new(r"C:\foo\bar"));
 /// ```
 pub fn cleanup(path: impl AsRef<Path>) -> PathBuf {
     let mut p = PathBuf::new();
@@ -27,7 +30,7 @@ pub fn cleanup(path: impl AsRef<Path>) -> PathBuf {
     while let Some(c) = components.next() {
         match c {
             Component::Prefix(pre) => match pre.kind() {
-                Prefix::VerbatimDisk(disk) => {
+                Prefix::Disk(disk) | Prefix::VerbatimDisk(disk) => {
                     p.clear();
                     p.push(format!("{}:\\", char::from(disk)));
                     let _root = components.next();

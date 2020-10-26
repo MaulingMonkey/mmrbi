@@ -21,6 +21,9 @@ pub trait PathExt {
     /// assert_eq!(Path::new("../../a/b/../..").cleanup(),          Path::new("../.."));
     /// assert_eq!(Path::new("../../a/b/../../..").cleanup(),       Path::new("../../.."));
     /// assert_eq!(Path::new("../../a/b/../../../..").cleanup(),    Path::new("../../../.."));
+    ///
+    /// assert_eq!(Path::new(r"C:\foo\bar").cleanup(),              Path::new(r"C:\foo\bar"));
+    /// assert_eq!(Path::new(r"\\?\C:\foo\bar").cleanup(),          Path::new(r"C:\foo\bar"));
     /// ```
     fn cleanup(&self) -> PathBuf;
 }
