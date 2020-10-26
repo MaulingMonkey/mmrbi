@@ -89,7 +89,7 @@ impl<
     }
 
     pub fn from_file_workspace(path: impl AsRef<Path> + Into<PathBuf>, toml: toml::Workspace<WM>) -> Self {
-        let path = path.as_ref().canonicalize().unwrap_or_else(|_| path.into()); // XXX?
+        let path = path.as_ref().canonicalize().unwrap_or_else(|_| path.into()).cleanup();
         let mut metadata = Self {
             workspace:  Workspace { directory: pop1(&path), toml },
             .. Default::default()
@@ -291,7 +291,7 @@ impl<
     use super::*;
 
     #[test] fn deserialize() {
-        let cwd = std::env::current_dir().unwrap();
+        let cwd = std::env::current_dir().unwrap().cleanup();
         let meta : Metadata = Metadata::from_current_dir().unwrap();
 
         assert_eq!(meta.workspace.directory, cwd);
