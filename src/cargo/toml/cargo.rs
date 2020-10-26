@@ -14,7 +14,7 @@ pub struct Cargo<
     Workspace   = Option<super::Workspace>,
 > {
     #[serde(default)] pub cargo_features:       BTreeSet<String>,
-    #[serde(default)] pub package:              Package,
+    pub package:                                Package,
 
     // Target tables
     #[serde(default, rename="lib"       )] pub lib:         Option<Target>,
@@ -35,7 +35,7 @@ pub struct Cargo<
     #[serde(default)] pub replace:              toml::value::Table,
     #[serde(default)] pub profile:              toml::value::Table,
 
-    #[serde(default)] pub workspace:            Workspace,
+    pub workspace:                              Workspace,
 
     #[serde(flatten)] rest:                     toml::value::Table
 }
@@ -114,5 +114,15 @@ impl<Package, Workspace> Cargo<Option<Package>, Workspace> {
         let workspace = cargo.workspace.unwrap();
         assert!(workspace.members.iter().any(|member| member == Path::new(".")));
         assert_eq!(package.name, "mmrbi");
+    }
+
+    #[test] fn deserialize_leaf() {
+        let path = std::path::Path::new("examples/script/Cargo.toml");
+        let bytes = std::fs::read(path).unwrap();
+        let cargo : Cargo = ::toml::from_slice(&bytes[..]).unwrap();
+
+        let package = cargo.package.unwrap();
+        assert!(cargo.workspace.is_none(), "[workspace] not expected in this manifest");
+        assert_eq!(package.name, "examples-script");
     }
 }
