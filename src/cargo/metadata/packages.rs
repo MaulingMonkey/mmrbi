@@ -1,3 +1,4 @@
+use crate::cargo::toml::package::Name;
 use super::Package;
 
 use nonmax::NonMaxUsize;
@@ -14,7 +15,7 @@ use std::path::{Path, PathBuf};
 #[non_exhaustive]
 pub struct Packages<PackageMetadata = toml::value::Table> {
     pub(super) list:    Vec<Package<PackageMetadata>>,
-    pub(super) by_name: BTreeMap<String, usize>,
+    pub(super) by_name: BTreeMap<Name, usize>,
     pub(super) by_path: BTreeMap<PathBuf, usize>,
     pub(super) active:  Option<NonMaxUsize>,
 }
@@ -30,9 +31,11 @@ impl<PM> Packages<PM> {
 /// A means of looking up parsed Cargo.toml `[package]`s
 pub trait PackagesKey           { fn get<PM>(self, packages: &Packages<PM>) -> Option<&Package<PM>>; }
 impl PackagesKey for usize      { fn get<PM>(self, packages: &Packages<PM>) -> Option<&Package<PM>> { packages.list.get(self) } }
-impl PackagesKey for &str       { fn get<PM>(self, packages: &Packages<PM>) -> Option<&Package<PM>> { packages.list.get(*packages.by_name.get(self)?) } }
-impl PackagesKey for  String    { fn get<PM>(self, packages: &Packages<PM>) -> Option<&Package<PM>> { packages.list.get(*packages.by_name.get(&self)?) } }
-impl PackagesKey for &String    { fn get<PM>(self, packages: &Packages<PM>) -> Option<&Package<PM>> { packages.list.get(*packages.by_name.get(self)?) } }
+impl PackagesKey for &str       { fn get<PM>(self, packages: &Packages<PM>) -> Option<&Package<PM>> { packages.list.get(*packages.by_name.get(self)?) } }           // deprecate?
+impl PackagesKey for  String    { fn get<PM>(self, packages: &Packages<PM>) -> Option<&Package<PM>> { packages.list.get(*packages.by_name.get(self.as_str())?) } }  // deprecate?
+impl PackagesKey for &String    { fn get<PM>(self, packages: &Packages<PM>) -> Option<&Package<PM>> { packages.list.get(*packages.by_name.get(self.as_str())?) } }  // deprecate?
+impl PackagesKey for  Name      { fn get<PM>(self, packages: &Packages<PM>) -> Option<&Package<PM>> { packages.list.get(*packages.by_name.get(self.as_str())?) } }
+impl PackagesKey for &Name      { fn get<PM>(self, packages: &Packages<PM>) -> Option<&Package<PM>> { packages.list.get(*packages.by_name.get(self.as_str())?) } }
 impl PackagesKey for &Path      { fn get<PM>(self, packages: &Packages<PM>) -> Option<&Package<PM>> { packages.list.get(*packages.by_path.get(self)?) } }
 impl PackagesKey for  PathBuf   { fn get<PM>(self, packages: &Packages<PM>) -> Option<&Package<PM>> { packages.list.get(*packages.by_path.get(&self)?) } }
 impl PackagesKey for &PathBuf   { fn get<PM>(self, packages: &Packages<PM>) -> Option<&Package<PM>> { packages.list.get(*packages.by_path.get(self)?) } }

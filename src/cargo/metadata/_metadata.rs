@@ -299,18 +299,19 @@ impl<
         assert!(meta.packages.len() >= 2,                                   "meta.packages: {:#?}",             meta.packages);
 
         let mmrbi = meta.packages.get("mmrbi").expect("meta.packages.get(\"mmrbi\")");
-        assert_eq!(mmrbi.path,                  cwd.join("Cargo.toml"));
-        assert_eq!(mmrbi.package.name,          "mmrbi");
-        assert_eq!(mmrbi.package.repository,    Some(String::from("https://github.com/MaulingMonkey/mmrbi.git")));
-        assert_eq!(mmrbi.package.documentation, Some(String::from("https://docs.rs/mmrbi/")));
-        assert_eq!(mmrbi.package.edition,       Some(String::from("2018")));
+        assert_eq!(mmrbi.path,                                      cwd.join("Cargo.toml"));
+        assert_eq!(mmrbi.package.name,                              "mmrbi");
+        assert_eq!(mmrbi.package.repository.as_ref().unwrap(),      "https://github.com/MaulingMonkey/mmrbi.git");
+        assert_eq!(mmrbi.package.documentation.as_ref().unwrap(),   "https://docs.rs/mmrbi/");
+        assert_eq!(mmrbi.package.edition,                           toml::package::Edition::V2018);
+        assert_eq!(mmrbi.package.publish,                           true);
         assert!(mmrbi.package.authors.iter().any(|a| a == "MaulingMonkey <git@maulingmonkey.com>"),    "mmrbi.package.authors: {:#?}", mmrbi.package.authors);
         // license, readme, description, keywords, categories, ...
 
         let script = meta.packages.get("examples-script").expect("meta.packages.get(\"examples-script\")");
         assert_eq!(script.path,                 cwd.join("examples").join("script").join("Cargo.toml"));
         assert_eq!(script.package.name,         "examples-script");
-        assert_eq!(script.package.publish,      toml::Publish::Enabled(false));
+        assert_eq!(script.package.publish,      false);
     }
 
     #[test] fn deserialize_misc_dir() {

@@ -9,6 +9,6 @@
 //! [cargo_metadata]:       https://docs.rs/cargo_metadata/
 
 mod cargo;          pub use cargo::*;
-mod package;        pub use package::{Package, Publish};
+pub mod package;    #[doc(inline)] pub use package::Package;
 mod target;         pub use target::Target;
 mod workspace;      pub use workspace::Workspace;
