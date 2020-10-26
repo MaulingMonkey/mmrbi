@@ -11,8 +11,8 @@ pub fn write_if_modified_with(path: impl AsRef<Path>, io: impl FnOnce(&mut Curso
     let v = c.into_inner();
     match std::fs::read(path) {
         Ok(bytes) if bytes == v                             => Ok(false),
-        Ok(_orig)                                           => std::fs::write(path, v).map(|()| true),
-        Err(err) if err.kind() == io::ErrorKind::NotFound   => std::fs::write(path, v).map(|()| true),
+        Ok(_orig)                                           => std::fs::write(path, v).map(|()| true).map_err(|err| io::Error::new(err.kind(), format!("{}: {}", path.display(), err))),
+        Err(err) if err.kind() == io::ErrorKind::NotFound   => std::fs::write(path, v).map(|()| true).map_err(|err| io::Error::new(err.kind(), format!("{}: {}", path.display(), err))),
         Err(err)                                            => Err(err),
     }
 }
