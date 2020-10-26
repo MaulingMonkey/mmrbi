@@ -71,7 +71,7 @@
 /// ```
 #[macro_export] macro_rules! fatal {
     ( $($tt:tt)* ) => {{
-        error!($($tt)*);
+        $crate::error!($($tt)*);
         ::std::process::exit(1);
     }};
 }
