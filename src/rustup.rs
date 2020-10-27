@@ -25,7 +25,7 @@
 
 // TODO: WSL support
 
-use crate::{Command, CommandExt, ResultExt};
+use crate::{Command, CommandExt, ResultExt, Version};
 
 use std::borrow::Borrow;
 use std::cmp::Ordering;
@@ -61,6 +61,11 @@ impl Rustup {
     pub fn new_unchecked(rustup: impl AsRef<OsStr> + Into<OsString>) -> Self {
         let rustup = rustup.into();
         Self { rustup: Arc::new(rustup.into()) }
+    }
+
+    /// Parse `rustup --version`
+    pub fn version(&self) -> Version {
+        Command::new(self.rustup.as_os_str()).arg("--version").stdout0().unwrap().parse().unwrap()
     }
 
     /// Returns `true` if `rustup --version` still succeeds
