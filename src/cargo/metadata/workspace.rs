@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 
 
 /// A workspace [directory](Workspace::directory), and corresponding <code>\[[workspace](toml::Workspace)\]</code>
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 #[non_exhaustive]
 pub struct Workspace<WorkspaceMetadata = ::toml::value::Table> {
     pub(crate) directory:  PathBuf,

@@ -6,7 +6,7 @@ use std::ops::Deref;
 
 
 /// Parsed Cargo.toml containing a `[package]`
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[non_exhaustive]
 pub struct Package<PackageMetadata = ::toml::value::Table> {
     pub(crate) path: PathBuf,
