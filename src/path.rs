@@ -21,8 +21,10 @@ use std::path::{Component, Path, PathBuf, Prefix};
 /// assert_eq!(cleanup("../../a/b/../../.."),       Path::new("../../.."));
 /// assert_eq!(cleanup("../../a/b/../../../.."),    Path::new("../../../.."));
 ///
-/// assert_eq!(cleanup(r"C:\foo\bar"),              Path::new(r"C:\foo\bar"));
-/// assert_eq!(cleanup(r"\\?\C:\foo\bar"),          Path::new(r"C:\foo\bar"));
+/// if cfg!(windows) {
+///     assert_eq!(cleanup(r"C:\foo\bar"),          Path::new(r"C:\foo\bar"));
+///     assert_eq!(cleanup(r"\\?\C:\foo\bar"),      Path::new(r"C:\foo\bar"));
+/// }
 /// ```
 pub fn cleanup(path: impl AsRef<Path>) -> PathBuf {
     let mut p = PathBuf::new();
