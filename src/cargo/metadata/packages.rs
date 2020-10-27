@@ -1,8 +1,6 @@
 use crate::cargo::toml::package::Name;
 use super::Package;
 
-use nonmax::NonMaxUsize;
-
 use std::collections::BTreeMap;
 use std::fmt::{self, Debug, Formatter};
 use std::ops::Index;
@@ -11,17 +9,27 @@ use std::path::{Path, PathBuf};
 
 
 /// An indexed list of Cargo.toml files containing `[package]`s
-#[derive(Default)]
 #[non_exhaustive]
 pub struct Packages<PackageMetadata = toml::value::Table> {
     pub(super) list:    Vec<Package<PackageMetadata>>,
     pub(super) by_name: BTreeMap<Name, usize>,
     pub(super) by_path: BTreeMap<PathBuf, usize>,
-    pub(super) active:  Option<NonMaxUsize>,
+    pub(super) active:  usize,
+}
+
+impl<PM> Default for Packages<PM> {
+    fn default() -> Self {
+        Self {
+            list:       Default::default(),
+            by_name:    Default::default(),
+            by_path:    Default::default(),
+            active:     std::usize::MAX,
+        }
+    }
 }
 
 impl<PM> Packages<PM> {
-    pub fn active(&self) -> Option<&Package<PM>> { self.active.map(|a| &self.list[a.get()]) }
+    pub fn active(&self) -> Option<&Package<PM>> { self.list.get(self.active) }
     pub fn get(&self, key: impl PackagesKey) -> Option<&Package<PM>> { key.get(self) }
     pub fn is_empty(&self) -> bool { self.list.is_empty() }
     pub fn len(&self) -> usize { self.list.len() }

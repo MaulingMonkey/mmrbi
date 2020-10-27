@@ -11,8 +11,6 @@ use super::toml;
 
 use serde::de::DeserializeOwned;
 
-use nonmax::NonMaxUsize;
-
 use std::collections::{BTreeSet, BTreeMap};
 use std::fmt::Debug;
 use std::io;
@@ -138,7 +136,7 @@ impl<
                     ..Default::default()
                 },
                 packages: Packages {
-                    active: Some(NonMaxUsize::from(0u8)),
+                    active: 0,
                     by_name: { let mut bm = BTreeMap::new(); bm.insert(pkg.package.name.clone(), 0); bm },
                     by_path: { let mut bm = BTreeMap::new(); bm.insert(PathBuf::from(pkg_path.as_ref()), 0); bm },
                     list: vec![Package {
@@ -200,7 +198,7 @@ impl<
         Self {
             workspace:  Workspace { directory: pop1(pkg_path.as_ref()), toml: toml::Workspace { members: vec![PathBuf::from(".")], ..Default::default() }, ..Default::default() },
             packages:   Packages {
-                active: Some(NonMaxUsize::from(0u8)),
+                active: 0,
                 by_name: { let mut bm = BTreeMap::new(); bm.insert(pkg.package.name.clone(), 0); bm },
                 by_path: { let mut bm = BTreeMap::new(); bm.insert(PathBuf::from(pkg_path.as_ref()), 0); bm },
                 list: vec![Package {
@@ -262,9 +260,9 @@ impl<
     fn set_active(&mut self, path: impl AsRef<Path>) {
         let path = path.as_ref();
         debug_assert!(path.is_absolute());
-        debug_assert!(self.packages.active.is_none());
-        let active = self.packages.by_path.get(path).and_then(|i| NonMaxUsize::new(*i));
-        self.packages.active = active;
+        debug_assert!(self.packages.active == std::usize::MAX);
+        let active = self.packages.by_path.get(path).copied();
+        self.packages.active = active.unwrap_or(std::usize::MAX);
         if active.is_none() { self.diagnostics.push(Diagnostic{
             path:       Some(PathBuf::from(path)),
             message:    format!("is expected to be the active project, but it is not part of the workspace"),
@@ -275,7 +273,7 @@ impl<
     fn expect_contains(&mut self, path: impl AsRef<Path>) {
         let path = path.as_ref();
         debug_assert!(path.is_absolute());
-        let found = self.packages.by_path.get(path).and_then(|i| NonMaxUsize::new(*i));
+        let found = self.packages.by_path.get(path);
         if found.is_none() { self.diagnostics.push(Diagnostic{
             path:       Some(PathBuf::from(path)),
             message:    format!("is expected to be part of the workspace, but it is not"),
