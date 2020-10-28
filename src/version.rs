@@ -2,6 +2,7 @@ use std::io;
 
 
 
+#[derive(Clone)]
 pub struct Version {
     pub tool_name:  String,
     pub version:    semver::Version,
@@ -40,6 +41,36 @@ impl Version {
             date:       date.into(),
         })
     }
+
+    /// Check if the version is at least the given version
+    ///
+    /// ```rust
+    /// # use mmrbi::Version;
+    /// let cargo_1_47_0_stable     = Version::parse_rusty_version("cargo 1.47.0").unwrap();
+    /// assert_eq!(false, cargo_1_47_0_stable   .is_at_least(1, 48, 0));
+    /// assert_eq!(true,  cargo_1_47_0_stable   .is_at_least(1, 47, 0));
+    /// assert_eq!(true,  cargo_1_47_0_stable   .is_at_least(1, 46, 0));
+    ///
+    /// let cargo_1_47_0_beta       = Version::parse_rusty_version("cargo 1.47.0-beta").unwrap();
+    /// assert_eq!(false, cargo_1_47_0_beta     .is_at_least(1, 48, 0));
+    /// assert_eq!(false, cargo_1_47_0_beta     .is_at_least(1, 47, 0));
+    /// assert_eq!(true,  cargo_1_47_0_beta     .is_at_least(1, 46, 0));
+    ///
+    /// let cargo_1_47_0_nightly    = Version::parse_rusty_version("cargo 1.47.0-nightly").unwrap();
+    /// assert_eq!(false, cargo_1_47_0_nightly  .is_at_least(1, 48, 0));
+    /// assert_eq!(false, cargo_1_47_0_nightly  .is_at_least(1, 47, 0));
+    /// assert_eq!(true,  cargo_1_47_0_nightly  .is_at_least(1, 46, 0));
+    /// ```
+    pub fn is_at_least(&self, major: u64, minor: u64, patch: u64) -> bool {
+        let self_ver = (self.version.major, self.version.minor, self.version.patch);
+        let check_ver = (major, minor, patch);
+
+        if self.version.is_prerelease() {
+            self_ver > check_ver
+        } else {
+            self_ver >= check_ver
+        }
+    }
 }
 
 impl std::str::FromStr for Version {
@@ -68,7 +99,3 @@ fn parse_date(date: &str) -> io::Result<&str> {
         Ok(date)
     }
 }
-
-
-
-pub use semver::VersionReq;

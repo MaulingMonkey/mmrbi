@@ -14,4 +14,4 @@ pub mod path;
 pub mod rustc;
 pub mod rustup;     pub use rustup::Rustup;
 mod result_ext;     pub use result_ext::ResultExt;
-mod version;        pub use version::{Version, VersionReq};
+mod version;        pub use version::Version;
