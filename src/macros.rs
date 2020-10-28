@@ -49,7 +49,7 @@
 /// status!("Finished", "{} [{}] target(s) in {}s", "dev", "debuginfo", "0.91");
 /// ```
 #[macro_export] macro_rules! status {
-    ( $verb:literal, $fmt:literal $($tt:tt)* ) => {{
+    ( $verb:expr, $fmt:literal $($tt:tt)* ) => {{
         use std::io::Write;
         let stderr = std::io::stderr();
         let mut stderr = stderr.lock();
