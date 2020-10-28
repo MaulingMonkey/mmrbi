@@ -1,11 +1,11 @@
 use std::collections::*;
 use std::fmt::{self, Display, Debug, Formatter};
 use std::ffi::*;
-use std::io;
+use std::io::{self, BufRead, BufReader};
 use std::path::*;
 use std::process::{Child, ExitStatus, Output, Stdio};
 use std::sync::Arc;
-
+use std::thread;
 
 
 /// A [Clone](https://doc.rust-lang.org/std/clone/trait.Clone.html)able, [Display](https://doc.rust-lang.org/std/fmt/trait.Display.html)able clone of [std::process::Command](https://doc.rust-lang.org/std/process/struct.Command.html)
@@ -187,4 +187,55 @@ impl crate::CommandExt for Command {
         }
         String::from_utf8(output.stdout).map_err(|_err| io::Error::new(io::ErrorKind::InvalidData, format!("{} failed: stdout contained invalid unicode", self)))
     }
+
+    fn io(&mut self, on_out: impl Fn(&str) + Send + Sync + 'static, on_err: impl Fn(&str) + Send + Sync + 'static) -> io::Result<ExitStatus> {
+        let mut child = self.to_command().stdout(Stdio::piped()).stderr(Stdio::piped()).spawn()?;
+
+        let stdout = child.stdout.take().map(|stdout| thread::spawn(move ||{
+            for line in BufReader::new(stdout).lines() {
+                on_out(&line.unwrap());
+            }
+        }));
+        let stderr = child.stderr.take().map(|stderr| thread::spawn(move ||{
+            for line in BufReader::new(stderr).lines() {
+                on_err(&line.unwrap());
+            }
+        }));
+        let es = child.wait()?;
+        stdout.map(|t| t.join().unwrap());
+        stderr.map(|t| t.join().unwrap());
+        Ok(es)
+    }
+
+    fn io0(&mut self, on_out: impl Fn(&str) + Send + Sync + 'static, on_err: impl Fn(&str) + Send + Sync + 'static) -> io::Result<()> {
+        let status = self.io(on_out, on_err)?;
+        match status.code() {
+            Some(0) => Ok(()),
+            Some(n) => Err(io::Error::new(io::ErrorKind::Other, format!("{} failed: exit code {}", self, n))),
+            None    => Err(io::Error::new(io::ErrorKind::Other, format!("{} failed: terminated by signal", self))),
+        }
+    }
 }
+
+
+
+pub struct IoLine<'s> {
+    pub(crate) line:   &'s str,
+    pub(crate) err:    bool
+}
+
+impl IoLine<'_> {
+    pub fn as_str(&self) -> &str { self.line }
+    pub fn is_stdout(&self) -> bool { !self.err }
+    pub fn is_stderr(&self) -> bool {  self.err }
+}
+
+impl std::convert::AsRef<str>           for IoLine<'_>  { fn as_ref(&self) -> &str { self.line } }
+impl std::borrow::Borrow<str>           for IoLine<'_>  { fn borrow(&self) -> &str { self.line } }
+impl std::ops::Deref                    for IoLine<'_>  { fn deref(&self) -> &Self::Target { self.line } type Target = str;  }
+impl std::fmt::Debug                    for IoLine<'_>  { fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result { std::fmt::Debug::fmt(&self.line, fmt) } }
+impl std::fmt::Display                  for IoLine<'_>  { fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result { std::fmt::Display::fmt(&self.line, fmt) } }
+impl std::cmp::PartialEq< str>          for IoLine<'_>  { fn eq(&self, other: &str      ) -> bool { &**self == other } }
+impl std::cmp::PartialEq<&str>          for IoLine<'_>  { fn eq(&self, other: &&str     ) -> bool { &**self == *other } }
+impl std::cmp::PartialEq<IoLine<'_>>    for  str        { fn eq(&self, other: &IoLine   ) -> bool { self == &**other } }
+impl std::cmp::PartialEq<IoLine<'_>>    for &str        { fn eq(&self, other: &IoLine   ) -> bool { *self == &**other } }
