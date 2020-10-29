@@ -144,14 +144,14 @@ impl Command {
         c
     }
 
-    pub fn spawn (&self) -> io::Result<Child> { self.to_command().spawn() }
-    pub fn output(&self) -> io::Result<Output> { self.to_command().output() }
-    pub fn status(&self) -> io::Result<ExitStatus> { self.to_command().status() }
+    pub fn spawn (&self) -> io::Result<Child>       { self.to_command().spawn() .map_err(|err| io::Error::new(err.kind(), format!("{} failed: {}", self, err))) }
+    pub fn output(&self) -> io::Result<Output>      { self.to_command().output().map_err(|err| io::Error::new(err.kind(), format!("{} failed: {}", self, err))) }
+    pub fn status(&self) -> io::Result<ExitStatus>  { self.to_command().status().map_err(|err| io::Error::new(err.kind(), format!("{} failed: {}", self, err))) }
 }
 
 impl crate::CommandExt for Command {
     fn status0(&mut self) -> io::Result<()> {
-        let status = self.to_command().status()?;
+        let status = self.status()?;
         match status.code() {
             Some(0) => Ok(()),
             Some(n) => Err(io::Error::new(io::ErrorKind::Other, format!("{} failed: exit code {}", self, n))),
@@ -160,7 +160,7 @@ impl crate::CommandExt for Command {
     }
 
     fn output0(&mut self) -> io::Result<Output> {
-        let output = self.to_command().output()?;
+        let output = self.output()?;
         match output.status.code() {
             Some(0) => Ok(output),
             Some(n) => Err(io::Error::new(io::ErrorKind::Other, format!("{} failed: exit code {}", self, n))),
@@ -169,7 +169,7 @@ impl crate::CommandExt for Command {
     }
 
     fn stdout0(&mut self) -> io::Result<String> {
-        let output = self.to_command().stderr(Stdio::inherit()).output()?;
+        let output = self.to_command().stderr(Stdio::inherit()).output().map_err(|err| io::Error::new(err.kind(), format!("{} failed: {}", self, err)))?;
         match output.status.code() {
             Some(0) => {},
             Some(n) => return Err(io::Error::new(io::ErrorKind::Other, format!("{} failed: exit code {}", self, n))),
@@ -179,7 +179,7 @@ impl crate::CommandExt for Command {
     }
 
     fn stdout0_no_stderr(&mut self) -> io::Result<String> {
-        let output = self.to_command().stderr(Stdio::null()).output()?;
+        let output = self.to_command().stderr(Stdio::null()).output().map_err(|err| io::Error::new(err.kind(), format!("{} failed: {}", self, err)))?;
         match output.status.code() {
             Some(0) => {},
             Some(n) => return Err(io::Error::new(io::ErrorKind::Other, format!("{} failed: exit code {}", self, n))),
@@ -189,7 +189,7 @@ impl crate::CommandExt for Command {
     }
 
     fn io(&mut self, on_out: impl Fn(&str) + Send + Sync + 'static, on_err: impl Fn(&str) + Send + Sync + 'static) -> io::Result<ExitStatus> {
-        let mut child = self.to_command().stdout(Stdio::piped()).stderr(Stdio::piped()).spawn()?;
+        let mut child = self.to_command().stdout(Stdio::piped()).stderr(Stdio::piped()).spawn().map_err(|err| io::Error::new(err.kind(), format!("{} failed: {}", self, err)))?;
 
         let stdout = child.stdout.take().map(|stdout| thread::spawn(move ||{
             for line in BufReader::new(stdout).lines() {
@@ -201,7 +201,7 @@ impl crate::CommandExt for Command {
                 on_err(&line.unwrap());
             }
         }));
-        let es = child.wait()?;
+        let es = child.wait().map_err(|err| io::Error::new(err.kind(), format!("{} failed: {}", self, err)))?;
         stdout.map(|t| t.join().unwrap());
         stderr.map(|t| t.join().unwrap());
         Ok(es)
