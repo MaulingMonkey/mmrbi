@@ -216,6 +216,7 @@ impl<'t> ToolchainTargets<'t> {
 
     /// `rustup target add {target} --toolchain {toolchain}` - adds a target
     pub fn add(&self, target: impl AsRef<str>) -> io::Result<()> {
+        if self.get(target.as_ref()).is_some() { return Ok(()) }
         self.rustup(&["target", "add", target.as_ref()]).status0()
     }
 
