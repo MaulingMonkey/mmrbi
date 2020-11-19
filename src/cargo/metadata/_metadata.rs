@@ -300,7 +300,7 @@ impl<
         let mmrbi = meta.packages.get("mmrbi").expect("meta.packages.get(\"mmrbi\")");
         assert_eq!(mmrbi.path,                                      cwd.join("Cargo.toml"));
         assert_eq!(mmrbi.package.name,                              "mmrbi");
-        assert_eq!(mmrbi.package.repository.as_ref().unwrap(),      "https://github.com/MaulingMonkey/mmrbi.git");
+        assert_eq!(mmrbi.package.repository.as_ref().unwrap(),      "https://github.com/MaulingMonkey/mmrbi");
         assert_eq!(mmrbi.package.documentation.as_ref().unwrap(),   "https://docs.rs/mmrbi/");
         assert_eq!(mmrbi.package.edition,                           toml::package::Edition::V2018);
         assert_eq!(mmrbi.package.publish,                           true);
