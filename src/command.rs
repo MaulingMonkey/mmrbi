@@ -81,6 +81,55 @@ impl Command {
         }
     }
 
+    pub fn parse(command: impl AsRef<str>) -> Result<Self, String> {
+        let original = command.as_ref();
+        let mut args = Vec::new();
+
+        let mut s = original.chars().peekable();
+        'parse_next_arg: loop {
+            while s.peek() == Some(&' ') { let _space = s.next(); } // ignore leading whitespace
+            if s.peek().is_none() { break }
+
+            let mut arg = String::new();
+            if s.peek() == Some(&'\"') { // arg is quoted
+                let _quote = s.next();
+                while let Some(ch) = s.next() {
+                    if ch == '\\' && s.peek() == Some(&'\"') { // escaped interior quote
+                        let _esc_quote = s.next();
+                        arg.push('\"');
+                    } else if ch == '\"' { // ending quote
+                        args.push(arg);
+                        continue 'parse_next_arg;
+                    } else {
+                        arg.push(ch);
+                    }
+                }
+                return Err(format!("unable to parse `{}`: last quoted arg was never terminated", original));
+            } else { // arg is unquoted
+                while let Some(ch) = s.next() {
+                    if ch == ' ' { // ending space
+                        args.push(arg);
+                        continue 'parse_next_arg;
+                    } else if ch == '\"' {
+                        return Err(format!("unable to parse `{}`: unquoted arg has interior quotes", original));
+                    } else {
+                        arg.push(ch);
+                    }
+                }
+                args.push(arg);
+            }
+        }
+
+        match &args[..] {
+            [ exe, args @ .. ] => {
+                let mut cmd = Command::new(exe);
+                cmd.args(args);
+                Ok(cmd)
+            },
+            [] => Err(format!("unable to parse `{}`: empty/blank string? no args were parsed", original)),
+        }
+    }
+
     pub fn arg(&mut self, arg: impl AsRef<OsStr>) -> &mut Self {
         self.args.push(arg.as_ref().into());
         self
