@@ -24,7 +24,7 @@ travis-ci       = { repository = "MaulingMonkey/mmrbi", branch = "master" }
 # https://docs.rs/about/metadata
 all-features    = true
 default-target  = "x86_64-pc-windows-msvc"
-rustdoc-args    = ["--cfg doc_cfg"]
+rustdoc-args    = ["--cfg=doc_cfg"]
 
 [features]
 default         = []
