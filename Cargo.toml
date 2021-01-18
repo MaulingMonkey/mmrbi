@@ -21,7 +21,6 @@ categories      = ["development-tools::build-utils"]
 travis-ci       = { repository = "MaulingMonkey/mmrbi", branch = "master" }
 
 [dependencies]
-lazy_static     = "1.4"
 serde           = { version = "1", features = ["derive"] }
 toml            = "0.5"
 semver          = "0.11"
