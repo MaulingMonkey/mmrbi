@@ -2,11 +2,19 @@ use std::io;
 
 
 
+/// Parsed `"rustup 1.22.1 (b01adbbc3 2020-07-08)"`, decomposed into:<br>`{ tool_name: "rustup", version: "1.22.1", hash: "b01adbbc3", date: "2020-07-08" }`
 #[derive(Clone)]
 pub struct Version {
+    /// The tool name (e.g. `"rustup"`)
     pub tool_name:  String,
+
+    /// The semver (e.g. `"1.22.1"`)
     pub version:    semver::Version,
+
+    /// The hash (typically a git commit, e.g. `"b01adbbc3"`)
     pub hash:       String,
+
+    /// The date (typically in yyyy-mm-dd format, e.g. `"2020-07-08"`)
     pub date:       String
 }
 
