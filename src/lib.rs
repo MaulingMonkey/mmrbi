@@ -1,5 +1,9 @@
 //! MaulingMonkey's Rust Build Infrastructure
 
+#![cfg_attr(doc_cfg, feature(doc_cfg))]
+#![cfg_attr(not(feature = "all"), allow(unused_imports))]
+
+
 mod macros;
 
 #[path="cargo/_cargo.rs"] pub mod cargo;
@@ -14,4 +18,4 @@ pub mod path;
 pub mod rustc;
 pub mod rustup;     pub use rustup::Rustup;
 mod result_ext;     pub use result_ext::ResultExt;
-mod version;        pub use version::Version;
+mod version;        #[cfg(feature = "version")] pub use version::Version;

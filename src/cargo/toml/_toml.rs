@@ -8,6 +8,11 @@
 //!
 //! [cargo_metadata]:       https://docs.rs/cargo_metadata/
 
+#![cfg(feature = "serde")]
+#![cfg(feature = "toml" )]
+#![cfg_attr(doc_cfg, doc(cfg(feature = "serde")))]
+#![cfg_attr(doc_cfg, doc(cfg(feature = "toml" )))]
+
 mod cargo;          pub use cargo::*;
 pub mod package;    #[doc(inline)] pub use package::Package;
 mod target;         pub use target::Target;

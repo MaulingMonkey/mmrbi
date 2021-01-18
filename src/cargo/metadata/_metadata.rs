@@ -1,5 +1,10 @@
 //! Locate and parse Cargo.toml files
 
+#![cfg(feature = "serde")]
+#![cfg(feature = "toml" )]
+#![cfg_attr(doc_cfg, doc(cfg(feature = "serde")))]
+#![cfg_attr(doc_cfg, doc(cfg(feature = "toml" )))]
+
 mod diag;           pub use diag::*;
 mod utils;          use utils::*;
 mod package;        pub use package::Package;
