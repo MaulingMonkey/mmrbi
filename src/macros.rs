@@ -76,6 +76,24 @@
     }};
 }
 
+/// Display a header section:
+/// <code style="display: block; color: black; background: #14CE14; padding: 0.25em; margin: 0.5em 0;">  a header  </code>
+///
+/// # Example
+///
+/// ```rust,no_run
+/// # use mmrbi::*;
+/// header!("  a header  ");
+/// ```
+#[macro_export] macro_rules! header {
+    ( $fmt:literal $($tt:tt)* ) => {{
+        use std::io::Write;
+        let stderr = std::io::stderr();
+        let mut stderr = stderr.lock();
+        let _ = writeln!(&mut stderr, concat!("\u{001B}[30;102m", $fmt, "\u{001B}[0m") $($tt)*);
+    }};
+}
+
 
 
 #[doc(hidden)] #[macro_export] macro_rules! _logln {
