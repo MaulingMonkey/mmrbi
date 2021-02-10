@@ -53,7 +53,7 @@ impl Rustup {
     /// Returns `Err(...)` if `{rustup} --version` fails.
     pub fn new(rustup: impl AsRef<OsStr> + Into<OsString>) -> io::Result<Self> {
         let rustup = rustup.into();
-        Command::new(&rustup).arg("--version").stdout(|| Stdio::null()).status0()?;
+        Command::new(&rustup).arg("--version").stdout(|| Stdio::null()).stderr(|| Stdio::null()).status0()?;
         Ok(Self { rustup: Arc::new(rustup.into()) })
     }
 
@@ -67,12 +67,12 @@ impl Rustup {
     #[cfg(feature = "version")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "version")))]
     pub fn version(&self) -> crate::Version {
-        Command::new(self.rustup.as_os_str()).arg("--version").stdout0().unwrap().parse().unwrap()
+        Command::new(self.rustup.as_os_str()).arg("--version").stderr(|| Stdio::null()).stdout0().unwrap().parse().unwrap()
     }
 
     /// Returns `true` if `rustup --version` still succeeds
     pub fn is_available(&self) -> bool {
-        Command::new(self.rustup.as_os_str()).arg("--version").stdout(|| Stdio::null()).status().map_or(false, |c| c.code() == Some(0))
+        Command::new(self.rustup.as_os_str()).arg("--version").stdout(|| Stdio::null()).stderr(|| Stdio::null()).status().map_or(false, |c| c.code() == Some(0))
     }
 
     /// Toolchains rustup is aware of
