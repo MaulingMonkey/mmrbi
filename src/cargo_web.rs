@@ -6,7 +6,7 @@ use std::io;
 
 
 
-/// Parse `cargo-web --version`
+/// Parse `cargo web --version`
 ///
 /// # Examples
 ///
@@ -18,10 +18,10 @@ use std::io;
 #[cfg(feature = "version")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "version")))]
 pub fn version() -> io::Result<crate::Version> {
-    Command::new("cargo-web").arg("--version").stdout0()?.parse()
+    Command::new("cargo").arg("web").arg("--version").stdout0()?.parse()
 }
 
-/// Install `cargo-web` and friends if `cargo-web --version` < `v`
+/// Install `cargo-web` and friends if `cargo web --version` < `v`
 ///
 /// # Examples
 ///
@@ -36,5 +36,5 @@ pub fn install_at_least(v: &str) -> io::Result<()> {
     if let Ok(installed) = version() {
         if v >= installed.version { return Ok(()); }
     }
-    Command::new("cargo").arg("install").arg("--version").arg(format!("^{}", v)).arg("cargo-web-cli").status0()
+    Command::new("cargo").arg("install").arg("--version").arg(format!("^{}", v)).arg("cargo-web").status0()
 }
