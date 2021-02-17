@@ -21,7 +21,7 @@ pub fn version() -> io::Result<crate::Version> {
     Command::new("wasm-bindgen").arg("--version").stdout0()?.parse()
 }
 
-/// Install `wasm-bindgen` and friends if `wasm-bindgen --version` < `v`
+/// Install `wasm-bindgen` and friends if `wasm-bindgen --version` < `requested`
 ///
 /// # Examples
 ///
@@ -31,10 +31,10 @@ pub fn version() -> io::Result<crate::Version> {
 /// ```
 #[cfg(feature = "version")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "version")))]
-pub fn install_at_least(v: &str) -> io::Result<()> {
-    let v = semver::Version::parse(v).map_err(|err| io::Error::new(io::ErrorKind::InvalidInput, err))?;
+pub fn install_at_least(requested: &str) -> io::Result<()> {
+    let requested = semver::Version::parse(requested).map_err(|err| io::Error::new(io::ErrorKind::InvalidInput, err))?;
     if let Ok(installed) = version() {
-        if v >= installed.version { return Ok(()); }
+        if requested <= installed.version { return Ok(()); }
     }
-    Command::new("cargo").arg("install").arg("--version").arg(format!("^{}", v)).arg("wasm-bindgen-cli").status0()
+    Command::new("cargo").arg("install").arg("--version").arg(format!("^{}", requested)).arg("wasm-bindgen-cli").status0()
 }
