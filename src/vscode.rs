@@ -13,8 +13,10 @@ use std::io;
 ///
 /// ```rust
 /// # use mmrbi::vscode;
-/// assert!( vscode::list_extensions().contains("ms-vscode.cpptools"));
+/// # if std::env::var_os("CI").is_none() {
+/// assert!( vscode::list_extensions().contains("ms-vscode.cpptools1"));
 /// assert!(!vscode::list_extensions().contains("nonexistent"));
+/// # }
 /// ```
 pub fn list_extensions() -> BTreeSet<String> {
     if cfg!(windows) {
