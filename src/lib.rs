@@ -20,5 +20,6 @@ pub mod rustc;
 pub mod rustup;     pub use rustup::Rustup;
 mod result_ext;     pub use result_ext::ResultExt;
 mod version;        #[cfg(feature = "version")] pub use version::Version;
+pub mod vscode;
 pub mod wasm_bindgen;
 pub mod wasm_pack;
