@@ -9,6 +9,7 @@ mod macros;
 #[path="cargo/_cargo.rs"] pub mod cargo;
 #[doc(hidden)] pub mod log; // macro implementation details
 
+pub mod cargo_about;
 pub mod cargo_web;
 mod command_ext;    pub use command_ext::CommandExt;
 mod command;        pub use command::Command;
