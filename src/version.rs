@@ -5,7 +5,7 @@ use std::io;
 
 
 /// Parsed `"rustup 1.22.1 (b01adbbc3 2020-07-08)"`, decomposed into:<br>`{ tool_name: "rustup", version: "1.22.1", hash: "b01adbbc3", date: "2020-07-08" }`
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "version")))]
 pub struct Version {
     /// The tool name (e.g. `"rustup"`)
