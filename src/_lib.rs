@@ -7,7 +7,7 @@
 mod macros;
 
 #[path="cargo/_cargo.rs"] pub mod cargo;
-#[doc(hidden)] pub mod log; // macro implementation details
+#[doc(hidden)] pub mod _log_impl; // macro implementation details
 
 pub mod cargo_about;
 pub mod cargo_web;

@@ -9,7 +9,7 @@
 /// error!(at: "examples/macros.rs", line: 2, col: 3, code: "E1234", "an {} message", "error");
 /// error!("an {} message", "error"); // all params optional
 /// ```
-#[macro_export] macro_rules! error { ($($tt:tt)*) => { $crate::_logln!($crate::log::Severity::Error,    $($tt)*) }; }
+#[macro_export] macro_rules! error { ($($tt:tt)*) => { $crate::_logln!($crate::_log_impl::Severity::Error,    $($tt)*) }; }
 
 /// Display a warning in the same style as cargo or rustc:
 /// <code style="display: block; padding: 0.25em; margin: 0.5em 0;"><span style="color: olive; font-weight: bold">warning\[E1234\]</span><span style="color: grey; font-weight: bold">:</span> a warning message
@@ -22,7 +22,7 @@
 /// warning!(at: "examples/macros.rs", line: 2, col: 3, code: "E1234", "a {} message", "warning");
 /// warning!("a {} message", "warning"); // all params optional
 /// ```
-#[macro_export] macro_rules! warning { ($($tt:tt)*) => { $crate::_logln!($crate::log::Severity::Warning,  $($tt)*) }; }
+#[macro_export] macro_rules! warning { ($($tt:tt)*) => { $crate::_logln!($crate::_log_impl::Severity::Warning,  $($tt)*) }; }
 
 /// Display informational messages in the same style as cargo or rustc:
 /// <code style="display: block; padding: 0.25em; margin: 0.5em 0;"><span style="color: darkcyan; font-weight: bold">info\[E1234\]</span><span style="color: grey; font-weight: bold">:</span> an informational message
@@ -35,7 +35,7 @@
 /// info!(at: "examples/macros.rs", line: 2, col: 3, code: "E1234", "a {} message", "informational");
 /// info!("an {} message", "informational"); // all params optional
 /// ```
-#[macro_export] macro_rules! info { ($($tt:tt)*) => { $crate::_logln!($crate::log::Severity::Info,     $($tt)*) }; }
+#[macro_export] macro_rules! info { ($($tt:tt)*) => { $crate::_logln!($crate::_log_impl::Severity::Info,     $($tt)*) }; }
 
 /// Display a status/progress lines in the same style as cargo or rustc:
 /// <code style="display: block; padding: 0.25em; margin: 0.5em 0;"><span style="color: green; font-weight: bold">&nbsp;Documenting</span> mmrbi v0.0.0 (C:\local\mmrbi)
@@ -99,7 +99,7 @@
 #[doc(hidden)] #[macro_export] macro_rules! _logln {
     ( $sev:expr, $($tt:tt)* ) => {{
         #[allow(unused_mut)]
-        let mut ctx = $crate::log::Context {
+        let mut ctx = $crate::_log_impl::Context {
             severity:   $sev,
             code:       "",
             at:         None,
@@ -121,6 +121,6 @@
     // Terminal rule
     ( $ctx:expr, $fmt:literal $($tt:tt)* ) => {
         use ::std::io::Write;
-        $crate::log::write($ctx, |stderr| writeln!(stderr, $fmt $($tt)*));
+        $crate::_log_impl::write($ctx, |stderr| writeln!(stderr, $fmt $($tt)*));
     };
 }
