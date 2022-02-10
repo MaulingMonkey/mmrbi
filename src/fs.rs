@@ -121,7 +121,7 @@ pub mod windows {
     }
 
     /// Try to find `dxc.exe`, the SM 6.0 and later HLSL shader compiler
-    pub fn find_dxc_exe() -> io::Result<PathBuf> { find_win_kit_10_bin("fxc.exe") }
+    pub fn find_dxc_exe() -> io::Result<PathBuf> { find_win_kit_10_bin("dxc.exe") }
 
     /// Try to find `fxc.exe`, the SM 5.0 and earlier HLSL shader compiler
     pub fn find_fxc_exe() -> io::Result<PathBuf> { find_win_kit_10_bin("fxc.exe") }
