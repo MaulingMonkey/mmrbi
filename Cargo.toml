@@ -20,9 +20,6 @@ categories      = ["development-tools::build-utils"]
 [lib]
 path            = "src/_lib.rs"
 
-[badges]
-travis-ci       = { repository = "MaulingMonkey/mmrbi", branch = "master" }
-
 [package.metadata.docs.rs]
 # https://docs.rs/about/metadata
 all-features    = true

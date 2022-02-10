@@ -5,7 +5,6 @@
 [![docs.rs](https://docs.rs/mmrbi/badge.svg)](https://docs.rs/mmrbi)
 [![License](https://img.shields.io/crates/l/mmrbi.svg)](https://github.com/MaulingMonkey/mmrbi)
 [![Build Status](https://github.com/MaulingMonkey/mmrbi/workflows/Rust/badge.svg)](https://github.com/MaulingMonkey/mmrbi/actions?query=workflow%3Arust)
-<!-- [![Build Status](https://travis-ci.com/MaulingMonkey/mmrbi.svg?branch=master)](https://travis-ci.com/MaulingMonkey/mmrbi) -->
 <!-- [![dependency status](https://deps.rs/repo/github/MaulingMonkey/mmrbi/status.svg)](https://deps.rs/repo/github/MaulingMonkey/mmrbi) -->
 
 
