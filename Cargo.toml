@@ -17,6 +17,9 @@ description     = "MaulingMonkey's Rust Build Infrastructure"
 keywords        = []
 categories      = ["development-tools::build-utils"]
 
+[lib]
+path            = "src/_lib.rs"
+
 [badges]
 travis-ci       = { repository = "MaulingMonkey/mmrbi", branch = "master" }
 
