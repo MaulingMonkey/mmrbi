@@ -1,6 +1,6 @@
 use std::io;
 use std::path::Path;
-use std::sync::atomic::{AtomicUsize, Ordering::AcqRel};
+use std::sync::atomic::{AtomicUsize, Ordering::*};
 
 
 
@@ -24,8 +24,8 @@ pub struct Stats {
 impl Stats {
     pub fn get() -> Self {
         Self {
-            errors:     ERRORS.load(AcqRel),
-            warnings:   WARNINGS.load(AcqRel),
+            errors:     ERRORS.load(Acquire),
+            warnings:   WARNINGS.load(Acquire),
         }
     }
 }
