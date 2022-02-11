@@ -307,7 +307,7 @@ impl<
         assert_eq!(mmrbi.package.name,                              "mmrbi");
         assert_eq!(mmrbi.package.repository.as_ref().unwrap(),      "https://github.com/MaulingMonkey/mmrbi");
         assert_eq!(mmrbi.package.documentation.as_ref().unwrap(),   "https://docs.rs/mmrbi/");
-        assert_eq!(mmrbi.package.edition,                           toml::package::Edition::V2018);
+        assert_eq!(mmrbi.package.edition,                           toml::package::Edition::V2021);
         assert_eq!(mmrbi.package.publish,                           true);
         assert!(mmrbi.package.authors.iter().any(|a| a == "MaulingMonkey <git@maulingmonkey.com>"),    "mmrbi.package.authors: {:#?}", mmrbi.package.authors);
         // license, readme, description, keywords, categories, ...

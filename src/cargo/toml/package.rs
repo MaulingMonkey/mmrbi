@@ -51,12 +51,13 @@ pub struct Category(String);
 // TODO: impl tons of category slugs?
 
 /// A Cargo.toml [`package.edition`](https://doc.rust-lang.org/cargo/reference/manifest.html#the-edition-field),
-/// typically "2015" or "2018"
+/// typically "2015", "2018", or "2021"
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Edition(Cow<'static, str>);
 impl Edition {
     pub const V2015 : Edition = Edition(Cow::Borrowed("2015"));
     pub const V2018 : Edition = Edition(Cow::Borrowed("2018"));
+    pub const V2021 : Edition = Edition(Cow::Borrowed("2021"));
 }
 
 /// A Cargo.toml [`package.license`](https://doc.rust-lang.org/cargo/reference/manifest.html#the-license-and-license-file-fields),
