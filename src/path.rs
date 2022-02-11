@@ -177,16 +177,10 @@ fn has_extension_impl(path: impl AsRef<Path>, ext: impl AsRef<OsStr>, eq: impl F
         loop {
             match (file_name.next(), ext.next()) {
                 (None, None) => return true,
-                (Some(file_name_16), Some(ext_16)) => {
-                    match (u8::try_from(file_name_16), u8::try_from(ext_16)) {
-                        (Ok(file_name_8), Ok(ext_8)) => {
-                            if !eq(file_name_8, ext_8) { return false }
-                        },
-                        (Err(_), Err(_)) => {
-                            if file_name_16 != ext_16 { return false }
-                        },
-                        _mixed => return false,
-                    }
+                (Some(file_name_16), Some(ext_16)) => match (u8::try_from(file_name_16), u8::try_from(ext_16)) {
+                    (Ok(file_name_8), Ok(ext_8))    => { if !eq(file_name_8, ext_8) { return false } },
+                    (Err(_), Err(_))                => { if file_name_16 != ext_16  { return false } },
+                    _mixed                          => return false,
                 },
                 _other => panic!("has_extension_impl bug: file_name and ext should've had the same length in loop"),
             }
