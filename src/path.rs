@@ -90,7 +90,7 @@ pub fn cleanup(path: impl AsRef<Path>) -> PathBuf {
 /// assert!(!has_extension("foo.tar.gz",   "z"));
 /// ```
 pub fn has_extension(path: impl AsRef<Path>, ext: impl AsRef<OsStr>) -> bool {
-    has_extension_impl(path, ext, |a,b| a.eq(b))
+    has_extension_impl(path, ext, |a,b| a == b)
 }
 
 /// Check the extension of a file
@@ -119,18 +119,21 @@ pub fn has_extension(path: impl AsRef<Path>, ext: impl AsRef<OsStr>) -> bool {
 /// assert!(!has_extension_ignore_ascii_case("foo.tar.gz",   "z"));
 /// ```
 pub fn has_extension_ignore_ascii_case(path: impl AsRef<Path>, ext: impl AsRef<OsStr>) -> bool {
-    has_extension_impl(path, ext, |a,b| a.eq_ignore_ascii_case(b))
+    has_extension_impl(path, ext, |a,b| a.eq_ignore_ascii_case(&b))
 }
 
+#[cfg(unix)]
 fn has_extension_impl(path: impl AsRef<Path>, ext: impl AsRef<OsStr>, eq: impl FnOnce(&[u8], &[u8]) -> bool) -> bool {
-    let ext = os_str_to_likely_wtf8_bytes(ext.as_ref());
+    use std::os::unix::ffi::*;
+
+    let ext = ext.as_ref().as_bytes();
     if ext.is_empty() { return true }
     let ext = ext.strip_prefix(b".").unwrap_or(ext);
     // ext = "tar.gz"
 
     let file_name = match path.as_ref().file_name() {
         None => return false,
-        Some(p) => os_str_to_likely_wtf8_bytes(p),
+        Some(p) => p.as_bytes(),
     };
     // file_name = "foo.tar.gz"
 
@@ -145,39 +148,48 @@ fn has_extension_impl(path: impl AsRef<Path>, ext: impl AsRef<OsStr>, eq: impl F
     }
 }
 
-#[cfg(windows)] fn is_os_str_to_bytes_transmute_safe_probably() -> bool {
-    #[repr(C)] struct Sliceish { ptr: usize, len: usize }
+#[cfg(windows)]
+fn has_extension_impl(path: impl AsRef<Path>, ext: impl AsRef<OsStr>, eq: impl Fn(u8, u8) -> bool) -> bool {
+    use std::os::windows::ffi::*;
 
-    let astr = "a";
-    let a = OsStr::new(astr);
-    if a.len() != 1 { return false }
-    // SAFETY:
-    //  ✔️ all bit patterns of Sliceish should be valid, no invariants to violate
-    //  ⚠️ if &OsStr ever has padding, this would be an unsound read of potentially uninitialized data
-    let a : Sliceish = unsafe { std::mem::transmute(a) };
-    if a.len != 1 { return false }
-    if a.ptr != astr.as_ptr() as usize { return false }
+    let ext_os = ext.as_ref();
+    if ext_os.is_empty() { return true }
+    let mut ext = ext_os.encode_wide();
+    if ext.next() != Some(b'.' as u16) { ext = ext_os.encode_wide() } // ~strip_prefix(b".")
+    let ext_len = ext.clone().count();
+    // ext = "tar.gz"
 
-    true
-}
+    let mut file_name = match path.as_ref().file_name() {
+        None => return false,
+        Some(p) => p.encode_wide(),
+    };
+    let file_name_len = file_name.clone().count();
+    // file_name = "foo.tar.gz"
 
-#[cfg(windows)] #[test] fn check_transmute_safe() {
-    assert!(is_os_str_to_bytes_transmute_safe_probably());
-}
+    if file_name_len <= ext_len {
+        // file_name is either smaller than ext, or doesn't have enough space for the leading `.`
+        // (might be exactly equal to `ext`, but that's not the same thing as *having* `ext` as an extension IMO)
+        false
+    } else {
+        for _ in ext_len+1 .. file_name_len { let _ = file_name.next(); }
+        if file_name.next() != Some(b'.' as u16) { return false }
 
-fn os_str_to_likely_wtf8_bytes<'s>(os: &'s (impl AsRef<OsStr> + ?Sized)) -> &'s [u8] {
-    return imp(os.as_ref());
-
-    #[cfg(unix)]
-    fn imp(os: &OsStr) -> &[u8] {
-        use std::os::unix::ffi::*;
-        os.as_bytes()
-    }
-
-    #[cfg(windows)]
-    fn imp(os: &OsStr) -> &[u8] {
-        assert!(is_os_str_to_bytes_transmute_safe_probably());
-        // UNSAFETY: ❌ technically super unsound?
-        unsafe { std::mem::transmute(os) }
+        loop {
+            match (file_name.next(), ext.next()) {
+                (None, None) => return true,
+                (Some(file_name_16), Some(ext_16)) => {
+                    match (u8::try_from(file_name_16), u8::try_from(ext_16)) {
+                        (Ok(file_name_8), Ok(ext_8)) => {
+                            if !eq(file_name_8, ext_8) { return false }
+                        },
+                        (Err(_), Err(_)) => {
+                            if file_name_16 != ext_16 { return false }
+                        },
+                        _mixed => return false,
+                    }
+                },
+                _other => panic!("has_extension_impl bug: file_name and ext should've had the same length in loop"),
+            }
+        }
     }
 }
