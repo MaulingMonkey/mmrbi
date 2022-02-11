@@ -1,5 +1,6 @@
 //! Similar to [std::fs::*](std::fs)
 
+pub mod snapshot;
 pub mod windows;
 
 
