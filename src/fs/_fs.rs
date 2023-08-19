@@ -5,13 +5,17 @@ pub mod windows;
 
 
 
+use crate::io::EolRewriter;
+
 use std::convert::TryFrom;
 use std::ffi::OsString;
 use std::fs::{DirEntry, FileType};
 use std::io::{self, Cursor};
 use std::path::{Path, PathBuf};
 
-/// Write the output of `io(&mut output)?` to `path` if it differed from what already existed there (if anything.)
+
+
+/// Write the output of `io(&mut o)?` to `path` unless unchanged.
 pub fn write_if_modified_with(path: impl AsRef<Path>, io: impl FnOnce(&mut Cursor<Vec<u8>>) -> io::Result<()>) -> io::Result<bool> {
     let path = path.as_ref();
     let mut c = Cursor::new(Vec::new());
@@ -23,6 +27,11 @@ pub fn write_if_modified_with(path: impl AsRef<Path>, io: impl FnOnce(&mut Curso
         Err(err) if err.kind() == io::ErrorKind::NotFound   => std::fs::write(path, v).map(|()| true).map_err(|err| io::Error::new(err.kind(), format!("{}: {}", path.display(), err))),
         Err(err)                                            => Err(err),
     }
+}
+
+/// Write the output of `io(&mut o)?` (replacing `\n` with `\r\n` on windows) to `path` unless unchanged.
+pub fn write_text_if_modified_with(path: impl AsRef<Path>, io: impl FnOnce(EolRewriter<&mut Cursor<Vec<u8>>>) -> io::Result<()>) -> io::Result<bool> {
+    write_if_modified_with(path, |w| io(EolRewriter(w)))
 }
 
 /// A directory [OsString] + [FileType]
