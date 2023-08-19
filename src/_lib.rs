@@ -8,6 +8,7 @@ mod macros;
 
 #[path="cargo/_cargo.rs"] pub mod cargo;
 #[path="fs/_fs.rs"      ] pub mod fs;
+#[path="io/_io.rs"      ] pub mod io;
 
 #[doc(hidden)] pub mod _log_impl; // macro implementation details
 
